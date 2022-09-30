@@ -4,18 +4,21 @@ import "./App.css";
 
 //Components
 import PokemonCollection from './components/PokemonCollection';
-import { Pokemon } from './interfaces';
+import { Details, Pokemon } from './interfaces';
 
 const App:React.FC = () => {
   const [ pokemons, setPokemons ] = useState<Pokemon[]>([]);
   const [ nextUrl, setNextUrl ] = useState<string>("");
+  const [ loading, setLoading ] = useState<boolean>(true);
+  const [ viewDetails, setViewDetails ] = useState<Details>({
+    id: 0,
+    isOpened: false,
+  });
 
   interface PokemonObject {
     name: string;
     url: string;
-  }
-
-
+  };
 
   useEffect(() => {
     const getPokemon = async () => {
@@ -25,34 +28,50 @@ const App:React.FC = () => {
 
       resp.data.results.forEach(async(pokemon: PokemonObject) => {
         const poke = await axios.get(`https://pokeapi.co/api/v2/pokemon/${pokemon.name}`);
-        setPokemons(prev => [...prev, poke.data])
+        setPokemons(prev => [...prev, poke.data]);
       });
 
+     setLoading(false);
     };
 
     getPokemon()
   }, []);
 
   const loadMore = async () => {
+    setLoading(true);
     const resp = await axios.get(nextUrl);
 
     resp.data.results.forEach(async(pokemon: PokemonObject) => {
       const poke = await axios.get(`https://pokeapi.co/api/v2/pokemon/${pokemon.name}`);
       setPokemons(prev => [...prev, poke.data]);
     })
-  }
+   setLoading(false);
+
+  };
 
   return (
     <div className="App">
       <div className="container">
         <header className="pokemon-header">Pokemon</header>
-        <PokemonCollection pokemons={pokemons}/>
 
-        <div>
-          <button className="btn" onClick={loadMore}>
-            Load more
-          </button>
-        </div>
+        <PokemonCollection 
+          pokemons={pokemons}
+          viewDetails={viewDetails}
+          setViewDetails={setViewDetails}
+        />
+
+        { !viewDetails.isOpened && (
+          <div>
+            {loading ? (
+              <button className="btn">Loading...</button>
+            ) : (
+              <button className="btn" onClick={loadMore}>
+                Load more
+              </button>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
